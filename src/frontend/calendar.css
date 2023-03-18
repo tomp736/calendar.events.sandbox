@@ -1,0 +1,41 @@
+html {
+    margin: 0;
+    height: 100vh;
+}
+
+body {
+    margin: 0;
+    height: 100vh;
+}
+
+.calendar
+
+  .calendar-week {
+    margin-bottom: 0 !important;
+  }
+
+  .calendar-day {
+    border: 1px solid black;
+  }
+  
+  .calendar-date {
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+  }
+  
+  .calendar-events {
+    display: flex;
+    flex-direction: column;
+    padding: 0px;
+  }
+  
+  .event {
+    background-color: lightblue;
+    margin-bottom: 5px;
+    padding: 5px;
+  }
+  
+  .calendar table {
+    height: 100%;
+  }

@@ -1,0 +1,53 @@
+version: '3.8'
+services:
+  db:
+    image: mariadb:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: mydatabase
+    volumes:
+      - ./src/data/mariadb/init/db_init.sql:/docker-entrypoint-initdb.d/db_init.sql:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - app-network
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./src/backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_NAME: mydatabase
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    networks:
+      - app-network
+
+  frontend:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    volumes:
+      - ./src/frontend/index.html:/usr/share/nginx/html/index.html
+      - ./src/frontend/calendar.css:/usr/share/nginx/html/calendar.css
+
+networks:
+  app-network:

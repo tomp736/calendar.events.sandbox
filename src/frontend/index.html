@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar Events</title>
+    <link rel="stylesheet" href="calendar.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+</head>
+
+<body>
+    <div id="app">
+        <nav class="navbar is-dark has-shadow">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a class="navbar-item" href="/">
+                    </a>
+
+                    <div class="navbar-burger burger" data-target="navMenu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+                <div class="navbar-end">
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
+                            Account
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item">
+                                Dashboard
+                            </a>
+                            <a class="navbar-item">
+                                Profile
+                            </a>
+                            <a class="navbar-item">
+                                Settings
+                            </a>
+                            <hr class="navbar-divider">
+                            <a class="navbar-item">
+                                Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div class="container" style="height: 90vh">
+            <div class="columns" style="height: 100%;">
+                <div class="column is-one-fifth">
+                </div>
+                <div class="calendar column">
+                    <table class="table">
+                        <thead>
+                          <tr class="has-text-centered">
+                            <th class="has-text-centered"><abbr title="Sunday">S</abbr></th>
+                            <th class="has-text-centered"><abbr title="Monday">M</abbr></th>
+                            <th class="has-text-centered"><abbr title="Tuesday">T</abbr></th>
+                            <th class="has-text-centered"><abbr title="Wednesday">W</abbr></th>
+                            <th class="has-text-centered"><abbr title="Thursday">T</abbr></th>
+                            <th class="has-text-centered"><abbr title="Friday">F</abbr></th>
+                            <th class="has-text-centered"><abbr title="Saturday">S</abbr></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="week in calendar">
+                            <td v-for="day in week">
+                                <div class="calendar-date">
+                                    {{ day.date }}
+                                </div>
+                                <div class="calendar-events">
+                                    <div class="event" v-for="event in day.events" @click="openEvent(event)">
+                                        {{ event.summary }}
+                                    </div>
+                                </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                    </table>
+                    <div class="modal has-text-white" :class="{'is-active': isModalActive}">
+                        <div class="modal-background"></div>
+                        <div class="modal-content">
+                            <div v-if="selectedEvent" class="event-details">
+                                <h2 class="title is-2 has-text-white">{{ selectedEvent.summary }}</h2>
+                                <form @submit.prevent="updateEvent">
+                                    <div class="field">
+                                        <label class="label has-text-white" for="summary">Summary:</label>
+                                        <div class="control">
+                                            <input class="input" type="text" id="summary"
+                                                v-model="selectedEvent.summary">
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label class="label has-text-white" for="description">Description:</label>
+                                        <div class="control">
+                                            <textarea class="textarea" id="description"
+                                                v-model="selectedEvent.description"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label class="label has-text-white" for="location">Location:</label>
+                                        <div class="control">
+                                            <input class="input" type="text" id="location"
+                                                v-model="selectedEvent.location">
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label class="label has-text-white" for="start_time">Start Time:</label>
+                                        <div class="control">
+                                            <input class="input" type="datetime-local" id="start_time"
+                                                v-model="selectedEvent.start_time">
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label class="label has-text-white" for="end_time">End Time:</label>
+                                        <div class="control">
+                                            <input class="input" type="datetime-local" id="end_time"
+                                                v-model="selectedEvent.end_time">
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <div class="control">
+                                            <button class="button is-primary" type="submit">Update</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <button class="modal-close is-large" aria-label="close" @click="isModalActive = false"></button>
+                    </div>
+                    <div>
+                        <input type="file" multiple @change="handleFileUpload">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = new Vue({
+            el: '#app',
+            data: {
+                isModalActive: false,
+                calendar: [], // Calendar data will be populated here
+                selectedEvent: null
+            },
+            created() {
+                this.fetchEvents();
+            },
+            methods: {
+                openEvent(event) {
+                    this.selectedEvent = event;
+                    this.isModalActive = true;
+                },
+                updateEvent() {
+                    fetch(`http://localhost:5000/events/${this.selectedEvent.uid}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            summary: this.selectedEvent.summary,
+                            description: this.selectedEvent.description,
+                            location: this.selectedEvent.location,
+                            start_time: this.selectedEvent.start_time,
+                            end_time: this.selectedEvent.end_time,
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(event => {
+                            // update the event in the calendar data
+                            // (you'll need to write this method yourself)
+                            // this.updateEventInCalendar(event);
+                            // clear the selected event and close the details view
+                            this.selectedEvent = null;
+                            this.isModalActive = false;
+                        });
+                },
+                fetchEvents() {
+                    fetch('http://localhost:5000/events')
+                        .then(response => response.json())
+                        .then(events => {
+                            this.populateCalendar(events);
+                        });
+                },
+                populateCalendar(events) {
+                    // Calculate the start and end of the current month
+                    const now = new Date();
+                    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                    const startDate = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth(), startOfMonth.getDate() - startOfMonth.getDay()); // Get the first Sunday of the month
+                    const endDate = new Date(endOfMonth.getFullYear(), endOfMonth.getMonth(), endOfMonth.getDate() + (6 - endOfMonth.getDay())); // Get the last Saturday of the month
+
+                    // Create an empty calendar grid
+                    let calendar = [];
+                    let week = [];
+                    for (let date = startDate; date <= endDate; date.setDate(date.getDate() + 1)) {
+                        // Create a day object with the date and associated events
+                        let day = {
+                            date: date.getDate(),
+                            events: events.filter(event => {
+                                const eventDate = new Date(event.start_time);
+                                return eventDate.getFullYear() === date.getFullYear() &&
+                                    eventDate.getMonth() === date.getMonth() &&
+                                    eventDate.getDate() === date.getDate();
+                            }),
+                        };
+
+                        week.push(day);
+                        if (date.getDay() === 6) {
+                            calendar.push(week);
+                            week = [];
+                        }
+                    }
+
+                    // Add the last week to the calendar if it's not empty
+                    if (week.length > 0) {
+                        calendar.push(week);
+                    }
+                    this.calendar = calendar;
+                },
+                handleFileUpload(event) {
+                    const files = event.target.files;
+                    const formData = new FormData();
+                    for (let i = 0; i < files.length; i++) {
+                        formData.append('file[]', files[i]);
+                    }
+                    fetch('http://localhost:5000/events/ics', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Error importing ICS files');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log(data.message);
+                        })
+                        .catch(error => {
+                            console.log(error.message);
+                        });
+                },
+            },
+        });
+    </script>
+</body>
+
+</html>
